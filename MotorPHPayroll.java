@@ -10,12 +10,10 @@ public class MotorPHPayroll {
     static final String EMPLOYEE_FILE = "MotorPHemployees.csv";
     static final String ATTENDANCE_FILE = "MotorPHemployeeattendance.csv";
 
-    static String[] empId = new String[200];
-    static String[] fullName = new String[200];
-    static String[] birthday = new String[200];
-    static double[] hourlyRate = new double[200];
-
-    static int employeeCount = 0;
+    static List<String> empId = new ArrayList<>();
+    static List<String> fullName = new ArrayList<>();
+    static List<String> birthday = new ArrayList<>();
+    static List<Double> hourlyRate = new ArrayList<>();
 
     public static void main(String[] args) {
 
@@ -57,10 +55,7 @@ public class MotorPHPayroll {
     public static void loadEmployees() {
 
         try {
-
-            BufferedReader br =
-                    new BufferedReader(new FileReader(EMPLOYEE_FILE));
-
+            BufferedReader br = new BufferedReader(new FileReader(EMPLOYEE_FILE));
             String line;
             br.readLine();
 
@@ -68,13 +63,10 @@ public class MotorPHPayroll {
 
                 String[] data = line.split(",");
 
-                empId[employeeCount] = data[0];
-                fullName[employeeCount] = data[2] + " " + data[1];
-                birthday[employeeCount] = data[3];
-                hourlyRate[employeeCount] =
-                        Double.parseDouble(data[data.length - 1]);
-
-                employeeCount++;
+                empId.add(data[0]);
+                fullName.add(data[2] + " " + data[1]);
+                birthday.add(data[3]);
+                hourlyRate.add(Double.parseDouble(data[data.length - 1]));
             }
 
             br.close();
@@ -96,10 +88,10 @@ public class MotorPHPayroll {
             System.out.println("Employee number does not exist.");
         } else {
 
-            System.out.println("Employee #: " + empId[index]);
-            System.out.println("Name: " + fullName[index]);
-            System.out.println("Birthday: " + birthday[index]);
-            System.out.printf("Hourly Rate: ₱%.2f%n", hourlyRate[index]);
+            System.out.println("Employee #: " + empId.get(index));
+            System.out.println("Name: " + fullName.get(index));
+            System.out.println("Birthday: " + birthday.get(index));
+            System.out.printf("Hourly Rate: ₱%.2f%n", hourlyRate.get(index));
         }
     }
 
@@ -113,9 +105,8 @@ public class MotorPHPayroll {
         System.out.print("Enter month (6-12): ");
         int month = sc.nextInt();
 
-        System.out.println("\n===============================");
-        System.out.println("PAY PERIOD: " + Month.of(month));
-        System.out.println("===============================");
+        printMainTitle();
+        printPayPeriod(Month.of(month).toString());
 
         if (option == 1) {
 
@@ -132,17 +123,19 @@ public class MotorPHPayroll {
 
         } else {
 
-            System.out.println("\n----- CUTOFF 1 (1-15) -----");
+            // CUTOFF 1
+            printCutoffTitle("CUTOFF 1 (1–15)");
             printHeader();
 
-            for (int i = 0; i < employeeCount; i++) {
+            for (int i = 0; i < empId.size(); i++) {
                 processSummary(i, month, 1);
             }
 
-            System.out.println("\n----- CUTOFF 2 (16-30/31) -----");
+            // CUTOFF 2
+            printCutoffTitle("CUTOFF 2 (16–END)");
             printHeader();
 
-            for (int i = 0; i < employeeCount; i++) {
+            for (int i = 0; i < empId.size(); i++) {
                 processSummary(i, month, 2);
             }
         }
@@ -150,66 +143,70 @@ public class MotorPHPayroll {
 
     // FIND EMPLOYEE
     public static int findEmployee(String id) {
-
-        for (int i = 0; i < employeeCount; i++) {
-
-            if (empId[i].equals(id))
+        for (int i = 0; i < empId.size(); i++) {
+            if (empId.get(i).equals(id))
                 return i;
         }
-
         return -1;
     }
 
-    // ONE EMPLOYEE DETAILED
+    // COMPUTE GROSS
+    public static double computeGross(double hours, double rate) {
+        return hours * rate;
+    }
+
+    // ONE EMPLOYEE (DETAILED VIEW)
     public static void processEmployeeDetailed(int index, int month) {
 
         NumberFormat php =
                 NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
 
-        System.out.println("\nEmployee #: " + empId[index]);
-        System.out.println("Name: " + fullName[index]);
-        System.out.println("Birthday: " + birthday[index]);
-        System.out.println("Hourly Rate: " + php.format(hourlyRate[index]));
+        System.out.println("\nEmployee #: " + empId.get(index));
+        System.out.println("Name: " + fullName.get(index));
+        System.out.println("Birthday: " + birthday.get(index));
+        System.out.println("Hourly Rate: " + php.format(hourlyRate.get(index)));
 
-        // FIRST CUTOFF
-        double hours1 =
-                computeHours(empId[index], month, 1, 15);
+        double hours1 = computeHours(empId.get(index), month, 1, 15);
+        double gross1 = computeGross(hours1, hourlyRate.get(index));
 
-        double gross1 = hours1 * hourlyRate[index];
-
-        System.out.println("\n--- Cutoff 1 (1-15) ---");
+        System.out.println("\n================================");
+        System.out.println("          MOTORPH PAYSLIP");
+        System.out.println("================================");
+        System.out.println("Period: " + Month.of(month) + " (Cutoff 1)");
         System.out.printf("Hours Worked: %.2f%n", hours1);
-        System.out.println("Gross Salary: " + php.format(gross1));
-        System.out.println("Net Salary: " + php.format(gross1));
+        System.out.println("Gross Pay: " + php.format(gross1));
+        System.out.println("Net Pay: " + php.format(gross1));
 
-        // SECOND CUTOFF
-        double hours2 =
-                computeHours(empId[index], month, 16, 31);
+        double hours2 = computeHours(empId.get(index), month, 16, 31);
+        double gross2 = computeGross(hours2, hourlyRate.get(index));
 
-        double gross2 = hours2 * hourlyRate[index];
+        double sss = MotorPHApplyDeductions.computeSSSDeduction(gross2);
+        double philhealth = MotorPHApplyDeductions.computePhilHealthDeduction(gross2);
+        double pagibig = MotorPHApplyDeductions.computePagIbigDeduction(gross2);
+        double tax = MotorPHApplyDeductions.computeIncomeTaxDeduction(gross2);
 
-        double sss = computeSSS(gross2);
-        double philhealth = computePhilHealth(gross2);
-        double pagibig = computePagibig(gross2);
-        double tax = computeTax(gross2);
+        double totalDeduction = sss + philhealth + pagibig + tax;
+        double net2 = MotorPHApplyDeductions.computeNetPay(gross2);
 
-        double totalDeduction =
-                sss + philhealth + pagibig + tax;
+        System.out.println("\n================================");
+        System.out.println("          MOTORPH PAYSLIP");
+        System.out.println("================================");
+        System.out.println("Period: " + Month.of(month) + " (Cutoff 2)");
 
-        double net2 = gross2 - totalDeduction;
-
-        System.out.println("\n--- Cutoff 2 (16-30/31) ---");
         System.out.printf("Hours Worked: %.2f%n", hours2);
-        System.out.println("Gross Salary: " + php.format(gross2));
+        System.out.println("Gross Pay: " + php.format(gross2));
+
+        System.out.println("\nDEDUCTIONS");
         System.out.println("SSS: " + php.format(sss));
         System.out.println("PhilHealth: " + php.format(philhealth));
         System.out.println("Pag-IBIG: " + php.format(pagibig));
         System.out.println("Tax: " + php.format(tax));
+
         System.out.println("Total Deduction: " + php.format(totalDeduction));
-        System.out.println("Net Salary: " + php.format(net2));
+        System.out.println("Net Pay: " + php.format(net2));
     }
 
-    // SUMMARY TABLE
+    // SUMMARY
     public static void processSummary(int index, int month, int cutoff) {
 
         NumberFormat php =
@@ -218,30 +215,26 @@ public class MotorPHPayroll {
         int start = (cutoff == 1) ? 1 : 16;
         int end = (cutoff == 1) ? 15 : 31;
 
-        double hours =
-                computeHours(empId[index], month, start, end);
-
-        double gross = hours * hourlyRate[index];
+        double hours = computeHours(empId.get(index), month, start, end);
+        double gross = computeGross(hours, hourlyRate.get(index));
 
         double deduction = 0;
         double net = gross;
 
         if (cutoff == 2) {
+            deduction = MotorPHApplyDeductions.computeSSSDeduction(gross)
+                    + MotorPHApplyDeductions.computePhilHealthDeduction(gross)
+                    + MotorPHApplyDeductions.computePagIbigDeduction(gross)
+                    + MotorPHApplyDeductions.computeIncomeTaxDeduction(gross);
 
-            deduction =
-                    computeSSS(gross)
-                            + computePhilHealth(gross)
-                            + computePagibig(gross)
-                            + computeTax(gross);
-
-            net = gross - deduction;
+            net = MotorPHApplyDeductions.computeNetPay(gross);
         }
 
         System.out.printf(
                 "%-8s %-30s %-12s %-10.2f %-15s %-15s %-15s%n",
-                empId[index],
-                fullName[index],
-                birthday[index],
+                empId.get(index),
+                fullName.get(index),
+                birthday.get(index),
                 hours,
                 php.format(gross),
                 php.format(deduction),
@@ -249,71 +242,49 @@ public class MotorPHPayroll {
         );
     }
 
-    // HOURS CALCULATION
-    public static double computeHours(
-            String id, int month, int startDay, int endDay) {
+    // HOURS
+    public static double computeHours(String id, int month, int startDay, int endDay) {
 
         double total = 0;
 
         try {
-
-            BufferedReader br =
-                    new BufferedReader(new FileReader(ATTENDANCE_FILE));
-
+            BufferedReader br = new BufferedReader(new FileReader(ATTENDANCE_FILE));
             String line;
             br.readLine();
 
-            DateTimeFormatter dateFormat =
-                    DateTimeFormatter.ofPattern("M/d/yyyy");
-
-            DateTimeFormatter timeFormat =
-                    DateTimeFormatter.ofPattern("H:mm");
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("M/d/yyyy");
+            DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("H:mm");
 
             while ((line = br.readLine()) != null) {
 
                 String[] data = line.split(",");
 
-                if (!data[0].equals(id))
-                    continue;
+                if (!data[0].equals(id)) continue;
 
-                LocalDate date =
-                        LocalDate.parse(data[3], dateFormat);
+                LocalDate date = LocalDate.parse(data[3], dateFormat);
 
-                if (date.getMonthValue() != month)
-                    continue;
+                if (date.getMonthValue() != month) continue;
 
                 int day = date.getDayOfMonth();
 
-                if (day < startDay || day > endDay)
-                    continue;
+                if (day < startDay || day > endDay) continue;
 
-                LocalTime in =
-                        LocalTime.parse(data[4], timeFormat);
+                LocalTime in = LocalTime.parse(data[4], timeFormat);
+                LocalTime out = LocalTime.parse(data[5], timeFormat);
 
-                LocalTime out =
-                        LocalTime.parse(data[5], timeFormat);
-
-                // Clamp to official work hours
                 if (in.isBefore(LocalTime.of(8, 0)))
                     in = LocalTime.of(8, 0);
 
                 if (out.isAfter(LocalTime.of(17, 0)))
                     out = LocalTime.of(17, 0);
 
-                double hours =
-                        ChronoUnit.MINUTES
-                                .between(in, out) / 60.0;
+                double hours = ChronoUnit.MINUTES.between(in, out) / 60.0;
 
-                // LUNCH DEDUCTION
-                if (hours > 0) {
-
-                    hours = hours - 1;
-
-                    if (hours < 0)
-                        hours = 0;
-
-                    total += hours;
+                if (hours >= 5) {
+                    hours -= 1;
                 }
+
+                total += Math.max(hours, 0);
             }
 
             br.close();
@@ -325,39 +296,35 @@ public class MotorPHPayroll {
         return total;
     }
 
-    // DEDUCTIONS
-    public static double computeSSS(double gross) {
-        return gross * 0.045;
+    // UI METHODS
+    public static void printMainTitle() {
+        System.out.println("\n==============================================================================================================");
+        System.out.println("                                          MOTORPH PAYROLL SUMMARY");
+        System.out.println("==============================================================================================================\n");
     }
 
-    public static double computePhilHealth(double gross) {
-        return gross * 0.02;
+    public static void printPayPeriod(String month) {
+        System.out.println("PAY PERIOD: " + month.toUpperCase());
     }
 
-    public static double computePagibig(double gross) {
-        return 100;
+    public static void printCutoffTitle(String title) {
+        System.out.println();
+        System.out.println("           " + title);
+        System.out.println();
     }
 
-    public static double computeTax(double gross) {
-
-        if (gross <= 20833)
-            return 0;
-
-        return gross * 0.10;
-    }
-
-    // HEADER
     public static void printHeader() {
-
         System.out.printf(
-                "%-8s %-30s %-12s %-10s %-15s %-15s %-15s%n",
+                "%-8s %-30s %-12s %-10s %-15s %-15s %-15s\n",
                 "Emp #",
                 "Name",
                 "Birthday",
                 "Hours",
-                "Gross",
+                "Gross Pay",
                 "Deductions",
-                "Net"
+                "Net Pay"
         );
+
+        System.out.println("------------------------------------------------------------------------------------------------------------");
     }
 }
